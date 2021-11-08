@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
 var indexRouter = require('./routes/index');
 var authRouter = require('./components/auth/index');
@@ -10,6 +12,15 @@ var userRouter = require('./components/user/user.route');
 var courseRouter = require('./components/course/course.route');
 var assignmentRouter = require('./components/assignment/assignment.route');
 
+mongoose.connect('mongodb+srv://black055:strongpassword@classroomapp.1efhx.mongodb.net/classroom?retryWrites=true&w=majority', function (err) {
+    if (err) throw err;
+    console.log('Connect to database successful!');
+  }, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useUnifiedTopology: true
+  }
+);
 
 var app = express();
 
@@ -17,6 +28,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
