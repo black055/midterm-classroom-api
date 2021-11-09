@@ -1,5 +1,5 @@
-const express = require("express");
-const courseController = require("./course.controller");
+import express from 'express';
+import courseController from "./course.controller.js";
 
 const router = express.Router();
 
@@ -9,4 +9,4 @@ router.get("/:id", courseController.getOneCourse);
 
 router.post("/", courseController.createCourse);
 
-module.exports = router;
+export default router;

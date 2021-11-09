@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const Course = new mongoose.Schema({
     author: mongoose.Schema.Types.ObjectId,
@@ -10,4 +10,4 @@ const Course = new mongoose.Schema({
     briefName: String,
 });
 
-module.exports = mongoose.model("course", Course);
+export default mongoose.model("course", Course);

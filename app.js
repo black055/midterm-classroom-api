@@ -1,16 +1,21 @@
-const createError = require('http-errors');
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
-const mongoose = require('mongoose');
-const cors = require('cors');
+import createError from 'http-errors';
+import express from 'express';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const indexRouter = require('./routes/index');
-const authRouter = require('./components/auth/index');
-const userRouter = require('./components/user/user.route');
-const courseRouter = require('./components/course/course.route');
-const assignmentRouter = require('./components/assignment/assignment.route');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import indexRouter from './routes/index.js';
+import authRouter from './components/auth/index.js';
+import userRouter from './components/user/user.route.js';
+import courseRouter from './components/course/course.route.js';
+import assignmentRouter from './components/assignment/assignment.route.js';
 
 mongoose.connect('mongodb+srv://black055:strongpassword@classroomapp.1efhx.mongodb.net/classroom?retryWrites=true&w=majority', function (err) {
     if (err) throw err;
@@ -57,4 +62,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+export default app;

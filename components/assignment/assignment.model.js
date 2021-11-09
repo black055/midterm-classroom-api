@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const Assignment = new mongoose.Schema({
     course: mongoose.Schema.Types.ObjectID,
@@ -16,4 +16,4 @@ const Assignment = new mongoose.Schema({
     */
 });
 
-module.exports = mongoose.model("assignment", Assignment);
+export default mongoose.model("assignment", Assignment);

@@ -16,5 +16,6 @@
     "morgan": "~1.9.1",
     "nodemon": "^2.0.14",
     "randomstring": "^1.2.1"
-  }
+  },
+  "type": "module"
 }

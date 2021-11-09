@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const Users = new mongoose.Schema({
     studentID: String,
@@ -10,4 +10,4 @@ const Users = new mongoose.Schema({
     gender: String,
 });
 
-module.exports = mongoose.model("users", Users);
+export default mongoose.model("users", Users);

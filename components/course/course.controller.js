@@ -1,7 +1,7 @@
-const Course = require("./course.model");
-const randomstring = require("randomstring");
+import Course from "./course.model.js";
+import randomstring from "randomstring";
 
-module.exports = {
+export default {
   getCourses: (req, res) => {
     const userId = req.header.user && req.header.user.id;
 
