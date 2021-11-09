@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const Course = new mongoose.Schema({
-    author: Schema.Types.ObjectId,
+    author: mongoose.Schema.Types.ObjectId,
     teachers: Array,
     students: Array,
     name: String,

@@ -1,16 +1,16 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-var indexRouter = require('./routes/index');
-var authRouter = require('./components/auth/index');
-var userRouter = require('./components/user/user.route');
-var courseRouter = require('./components/course/course.route');
-var assignmentRouter = require('./components/assignment/assignment.route');
+const indexRouter = require('./routes/index');
+const authRouter = require('./components/auth/index');
+const userRouter = require('./components/user/user.route');
+const courseRouter = require('./components/course/course.route');
+const assignmentRouter = require('./components/assignment/assignment.route');
 
 mongoose.connect('mongodb+srv://black055:strongpassword@classroomapp.1efhx.mongodb.net/classroom?retryWrites=true&w=majority', function (err) {
     if (err) throw err;
@@ -22,7 +22,7 @@ mongoose.connect('mongodb+srv://black055:strongpassword@classroomapp.1efhx.mongo
   }
 );
 
-var app = express();
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
