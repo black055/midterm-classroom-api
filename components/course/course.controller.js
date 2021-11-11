@@ -23,7 +23,7 @@ export default {
     const userId = req.header.user && req.header.user.id;
 
     //lay mot lop ma user co the la teacher hoac student
-    Course.find({ _id })
+    Course.findById(_id)
       .or([{ teachers: { $in: userId } }, { students: { $in: userId } }])
       .lean()
       .exec((e, c) => {
