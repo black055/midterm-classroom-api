@@ -1,30 +1,16 @@
 import express from 'express';
 const router = express.Router();
-import passport from 'passport';
 import jwt from 'jsonwebtoken';
-import constant from '../../config/constant.js';
-import bcrypt from "bcryptjs";
 
 import userController from '../user/user.controller.js'
 
-import passportConfig from '../../config/passport.js';
-passportConfig(passport);
+import passport from '../../modules/passport/index.js';
 
-router.post('/login', async function(req, res, next) {
-    const user = await userController.getUser(req.body.email);
-    if (user) {
-        let check = false;
-        check = await bcrypt.compareSync(req.body.password, user.password);
-        if (check) {
-            const token = jwt.sign({ _id: user._id }, constant.secret);
-            return res.json({
-                success: true,
-                token: token
-            });
-        } else {
-            res.status(401).send({success: false, msg: 'Mật khẩu không đúng.'});
-        }
-    } else res.status(401).send({success: false, msg: 'Email không đúng.'});
+router.post('/login', passport.authenticate('local', {session: false}), async function(req, res, next) {
+    const token = jwt.sign({ _id: req.user._id }, "nodeauthsecret");
+    res.json({
+        token: token
+    });
 });
 
 router.post('/register', async function(req, res, next) {
@@ -38,10 +24,9 @@ router.post('/register', async function(req, res, next) {
     if (successful) {
         const token = jwt.sign({ _id: successful._id }, 'secret');
         return res.json({
-            success: true,
             token: token
         });
-    } res.status(401).send({success: false, msg: 'Email đã tồn tại.'});
+    } res.status(401).send({message: 'Email đã tồn tại.'});
 });
 
 export default router;
