@@ -5,11 +5,13 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import config from './config/config.js'
+import mongoose from 'mongoose';
+import cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+import passport from './modules/passport/index.js';
 import indexRouter from './routes/index.js';
 import authRouter from './components/auth/auth.js';
 import userRouter from './components/user/user.route.js';
@@ -22,8 +24,19 @@ const app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
-config(app);
+mongoose.connect('mongodb+srv://black055:strongpassword@classroomapp.1efhx.mongodb.net/classroom?retryWrites=true&w=majority', 
+  function (err) {
+          if (err) throw err;
+          console.log('Connect to database successful!');
+      }, {
+          useNewUrlParser: true,
+          useFindAndModify: false,
+          useUnifiedTopology: true
+      }
+  );
 
+app.use(cors());
+app.use(passport.initialize());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
