@@ -9,4 +9,6 @@ router.get("/:id", courseController.getOneCourse);
 
 router.post("/", courseController.createCourse);
 
+router.post("/join", courseController.userJoinCourse);
+
 export default router;
