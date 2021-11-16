@@ -1,8 +1,6 @@
-import {
-    Strategy as JwtStrategy,
-    ExtractJwt,
-} from 'passport-jwt';
 import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport from 'passport';
 import bcrypt from "bcryptjs";
 
@@ -44,5 +42,21 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
         }
     });
 }));
+
+passport.use(
+    new GoogleStrategy(
+      {
+        clientID: '363623650683-5asnak0qhe873go03791oh3ln35uae26.apps.googleusercontent.com',
+        clientSecret: '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',
+        callbackURL: "/auth/google/callback",
+      },
+      function (accessToken, refreshToken, profile, done) {
+        console.log(accessToken);
+        console.log(profile);
+        done(null, profile);
+      }
+    )
+  );
+
 
 export default passport;
