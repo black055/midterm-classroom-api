@@ -6,8 +6,7 @@ export default {
     const userId = req.header.user && req.header.user.id;
 
     //lay toan bo lop ma user co the la teacher hoac student
-    Course.find()
-      .or([{ teachers: { $in: userId } }, { students: { $in: userId } }])
+    Course.find({ $or: [{ teachers: { $in: userId } }, { students: { $in: userId } }] })
       .lean()
       .exec((e, r) => {
         if (e) {
@@ -55,8 +54,21 @@ export default {
           return res.status(500).json({ message: e });
         }
 
-        res.status(200).json({ item: c });
+        res.status(200).json({ payload: c });
       }
     );
+  },
+
+  userJoinCourse: (req, res) => {
+    const userId = req.header.user && req.header.user.id;
+    const code  = req.query.code;
+
+    Course.findOneAndUpdate({ code }, { $push: { students: userId } }).exec((e, c) => {
+      if (e) {
+        return res.status(500).json({ message: e });
+      }
+
+      res.status(200).json({ payload: c, message: "You have successfully joined the course" });
+    });
   },
 };
