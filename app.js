@@ -13,10 +13,9 @@ const __dirname = dirname(__filename);
 
 import passport from './modules/passport/index.js';
 import indexRouter from './routes/index.js';
-import authRouter from './components/auth/auth.js';
+import authRouter from './components/auth/auth.route.js';
 import userRouter from './components/user/user.route.js';
 import courseRouter from './components/course/course.route.js';
-import assignmentRouter from './components/assignment/assignment.route.js';
 
 const app = express();
 
@@ -45,9 +44,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use("/auth", authRouter);
-app.use("/user", userRouter);
-app.use("/course", courseRouter);
-app.use("/assignment", assignmentRouter);
+app.use("/user", passport.authenticate('jwt', { session: false }), userRouter);
+app.use("/course", passport.authenticate('jwt', { session: false }), courseRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
