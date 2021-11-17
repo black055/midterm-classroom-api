@@ -5,7 +5,7 @@ import User from '../user/user.model.js'
 const client = new OAuth2Client("363623650683-5asnak0qhe873go03791oh3ln35uae26.apps.googleusercontent.com")
 export default {
     login: (req, res, next) => {
-        const token = jwt.sign({ _id: req.user._id }, "secret");
+        const token = jwt.sign({ _id: req.user._id }, process.env.AUTH_SECRET);
         res.json({
             token: token
         });
@@ -18,7 +18,7 @@ export default {
             const user = await User.findOne({email: `${data.payload.email}`});
             if (user) res.json({
                 success: true,
-                token: jwt.sign({ _id: user._id }, 'secret')
+                token: jwt.sign({ _id: user._id }, process.env.AUTH_SECRET)
             });
             else  res.json({
                 success: false,
@@ -47,7 +47,7 @@ export default {
             });
             newUser.save();
             return res.status(200).json({
-                token: jwt.sign({ _id: successful._id }, 'secret')
+                token: jwt.sign({ _id: successful._id }, process.env.AUTH_SECRET)
             });;
         }
     }

@@ -1,5 +1,6 @@
 import Course from "./course.model.js";
 import randomstring from "randomstring";
+import { sendInviteStudentEmail, sendInviteTeacherEmail } from "../../modules/nodemailer/index.js";
 
 export default {
   getCourses: (req, res) => {
@@ -69,6 +70,26 @@ export default {
       }
 
       res.status(200).json({ payload: c, message: "You have successfully joined the course" });
+    });
+  },
+
+  sendTeacherEmail: (req, res) => {
+    sendInviteTeacherEmail(req.body.email, req.body.course, req.user).then((result) => {
+      if (result) {
+        res.status(200).json({ message: "SENT_SUCCESSFUL" });
+      } else {
+        res.status(200).json({ message: "SENT_FAILED" });
+      }
+    });
+  },
+
+  sendStudentEmail: (req, res) => {
+    sendInviteStudentEmail(req.body.email, req.body.course, req.user).then((result) => {
+      if (result) {
+        res.status(200).json({ message: "SENT_SUCCESSFUL" });
+      } else {
+        res.status(200).json({ message: "SENT_FAILED" });
+      }
     });
   },
 };
