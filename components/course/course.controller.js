@@ -3,10 +3,10 @@ import randomstring from "randomstring";
 
 export default {
   getCourses: (req, res) => {
-    const userId = req.header.user && req.header.user.id;
+    const userId = req.headers.userId;
 
     //lay toan bo lop ma user co the la teacher hoac student
-    Course.find({ $or: [{ teachers: { $in: userId } }, { students: { $in: userId } }] })
+    Course.find({ $or: [{ author: userId }, { teachers: { $in: userId } }, { students: { $in: userId } }] })
       .lean()
       .exec((e, r) => {
         if (e) {
@@ -19,7 +19,7 @@ export default {
 
   getOneCourse: (req, res) => {
     const _id = req.params.id; //id cua lop cu the
-    const userId = req.header.user && req.header.user.id;
+    const userId = req.headers.userId;
 
     //lay mot lop ma user co the la teacher hoac student
     Course.findById(_id)
@@ -35,7 +35,7 @@ export default {
   },
 
   createCourse: (req, res) => {
-    const author = req.header.user && req.header.user.id;
+    const author = req.headers.userId;
     const { name, details, briefName } = req.body;
     const code = randomstring.generate(7);
 
@@ -60,8 +60,8 @@ export default {
   },
 
   userJoinCourse: (req, res) => {
-    const userId = req.header.user && req.header.user.id;
-    const code  = req.query.code;
+    const userId = req.headers.userId;
+    const code = req.query.code;
 
     Course.findOneAndUpdate({ code }, { $push: { students: userId } }).exec((e, c) => {
       if (e) {
