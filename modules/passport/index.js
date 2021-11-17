@@ -2,6 +2,8 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import passport from 'passport';
 import bcrypt from "bcryptjs";
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 // load up the user controller
 import User from '../../components/user/user.model.js';
@@ -28,18 +30,15 @@ passport.use(new LocalStrategy(
 
 var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken(),
-opts.secretOrKey = "secret";
+opts.secretOrKey = process.env.AUTH_SECRET;
 passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
     User.findOne({_id: jwt_payload._id}, function(err, user) {
         if (err) {
-            console.log('err', err);
             return done(err, false);
         }
         if (user) {
-            console.log('ok');
             done(null, user);
         } else {
-            console.log('wrong jwt');
             done(null, false);
         }
     });
