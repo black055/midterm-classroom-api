@@ -15,14 +15,21 @@ export default {
         const {tokenId} = req.body;
         client.verifyIdToken({ idToken: tokenId })
         .then(async function(data) {
-            const user = await User.findOne({email: `${data.payload.email}`});
-            if (user) res.json({
+            let user = await User.findOne({email: `${data.payload.email}`});
+            if (!user) {
+                user = new User({
+                    email: data.payload.email,
+                    password: "",
+                    firstname: data.payload.given_name,
+                    lastname: data.payload.family_name,
+                    gender: 'Khác',
+                    courses: []
+                });
+                user.save();
+            }
+            res.json({
                 success: true,
                 token: jwt.sign({ _id: user._id }, process.env.AUTH_SECRET)
-            });
-            else  res.json({
-                success: false,
-                payload: data.payload
             });
         }).catch(err => {
             res.status(401).json({message: "Unauthorized"});

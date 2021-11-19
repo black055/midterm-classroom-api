@@ -6,8 +6,8 @@ const transporter = nodemailer.createTransport({
     secure: true,
     service: 'gmail',
     auth: {
-        user: 'classroomreactapp@gmail.com',
-        pass: 'Thisisapassword123'
+        user: process.env.MAILER_USERNAME,
+        pass: process.env.MAILER_PASSWORD
     }
  });
 

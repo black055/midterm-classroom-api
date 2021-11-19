@@ -8,7 +8,7 @@ export default {
     const userId = req.user._id;
 
     //lay toan bo lop ma user co the la teacher hoac student
-    Course.find({ $or: [{ author: userId }, { teachers: { $in: userId } }, { students: { $in: userId } }] })
+    Course.find({ $or: [{ owner: userId }, { teachers: { $in: userId } }, { students: { $in: userId } }] })
       .lean()
       .exec((e, r) => {
         if (e) {
@@ -34,29 +34,84 @@ export default {
 
         //neu khong co ket qua
         if (!(c && c._id)) {
-          return res.status(202).json({ message: "You're not in the class!" });
+          return res.status(202).json({ message: "Không tìm thấy khoá học!" });
         }
 
         const students = await User.find({ _id: { $in: c.students } });
         const teachers = await User.find({ _id: { $in: c.teachers } });
+        const owner = await User.findOne({ _id: c.owner });
 
-        c.students = students.map((s) => s.firstname + " " + s.lastname);
-        c.teachers = teachers.map((s) => s.firstname + " " + s.lastname);
+        c.students = students.map((student) => ({
+          _id: student._id,
+          name: student.firstname + " " + student.lastname,
+          email: student.email
+        }));
+        c.teachers = teachers.map((teacher) => ({
+          _id: teacher._id,
+          name: teacher.firstname + " " + teacher.lastname,
+          email: teacher.email
+        }));
+        c.owner = {
+          _id: owner._id,
+          name: owner.firstname + " " + owner.lastname,
+          email: owner.email
+        }
+
+        return res.status(200).json({ payload: c });
+      });
+  },
+
+  getPublicInfoCourse: (req, res) => {
+    const _id = req.params.id; //id cua lop cu the
+    const userId = req.user._id;
+
+    //lay mot lop ma user co the la teacher hoac student
+    Course.findById(_id)
+      .lean()
+      .exec(async (e, c) => {
+        if (e) {
+          return res.status(500).json({ message: e });
+        }
+
+        //neu khong co ket qua
+        if (!(c && c._id)) {
+          return res.status(202).json({ message: "Không tìm thấy thông tin khoá học!" });
+        }
+        
+        // Kiểm tra xem người dùng có trong khoá học chưa
+        if (c.owner.equals(req.user._id) || c.teachers.includes(req.user._id) || c.students.includes(req.user._id)) {
+          return res.status(202).json({ message: "ALREADY_IN" });
+        }
+
+        const teachers = await User.find({ _id: { $in: c.teachers } });
+        const owner = await User.findOne({ _id: c.owner });
+
+        c.teachers = teachers.map((teacher) => ({
+          _id: teacher._id,
+          name: teacher.firstname + " " + teacher.lastname,
+          email: teacher.email
+        }));
+        c.owner = {
+          _id: owner._id,
+          name: owner.firstname + " " + owner.lastname,
+          email: owner.email
+        }
 
         return res.status(200).json({ payload: c });
       });
   },
 
   createCourse: (req, res) => {
-    const author = req.user._id;
+    const owner = req.user._id;
     const { name, details, briefName } = req.body;
     const code = randomstring.generate(7);
 
     Course.create(
       {
-        author,
-        teachers: [author],
+        owner,
+        teachers: [],
         students: [],
+        inviteCode: [],
         name,
         details,
         code,
@@ -86,7 +141,9 @@ export default {
   },
 
   sendTeacherEmail: (req, res) => {
-    sendInviteTeacherEmail(req.body.email, req.body.course, req.user).then((result) => {
+    const inviteCode = randomstring.generate(12);
+    Course.findOneAndUpdate({ _id: req.body.course._id }, { $push: { inviteCode: inviteCode } });
+    sendInviteTeacherEmail(req.body.email, req.body.course, req.user, inviteCode).then((result) => {
       if (result) {
         res.status(200).json({ message: "SENT_SUCCESSFUL" });
       } else {

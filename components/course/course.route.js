@@ -7,6 +7,8 @@ router.get("/", courseController.getCourses);
 
 router.get("/:id", courseController.getOneCourse);
 
+router.get("/public/:id", courseController.getPublicInfoCourse);
+
 router.post("/", courseController.createCourse);
 
 router.post("/join", courseController.userJoinCourse);
