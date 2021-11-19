@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+const URL = 'http://localhost:3001';
+
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -23,7 +25,7 @@ export function sendInviteStudentEmail(receiver, course, sender) {
             <p>Bạn nhận được lời mời tham gia lớp học <strong>[${course.briefName}] ${course.name}</strong> từ <strong>${sender.firstname} ${sender.lastname}</strong>.</p>
             
             <p>Nếu đồng ý vui lòng truy cập vào link bên dưới và đăng nhập để xác nhận tham gia:</p>
-            <p>Http://Link-invite-student.com</p></br>
+            <p>${URL + '/invite/student/' + course._id + '?code=' + course.code}</p></br>
             
             <p>Xin cảm ơn.</p>
              `
@@ -40,7 +42,7 @@ export function sendInviteStudentEmail(receiver, course, sender) {
     });
 }
 
-export function sendInviteTeacherEmail(receiver, course, sender) {
+export function sendInviteTeacherEmail(receiver, course, sender, inviteCode) {
     return new Promise((resolve,reject)=>{
         const mailOptions = {
             from: process.env.MAILER_USERNAME,
@@ -52,7 +54,7 @@ export function sendInviteTeacherEmail(receiver, course, sender) {
             <p>Bạn nhận được lời mời dạy lớp học <strong>[${course.briefName}] ${course.name}</strong> từ <strong>${sender.firstname} ${sender.lastname}</strong>.</p>
             
             <p>Nếu đồng ý vui lòng truy cập vào link bên dưới và đăng nhập để xác nhận tham gia:</p>
-            <p>Http://Link-invite-student.com</p></br>
+            <p>${URL + '/invite/teacher/' + course._id + '?inviteCode=' + inviteCode}</p></br>
     
             <p>Xin cảm ơn.</p>
              `
