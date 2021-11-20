@@ -35,25 +35,34 @@ export default {
           return res.status(202).json({ message: "Không tìm thấy khoá học!" });
         }
 
+        //xac dinh role
+        if (c.students.some((id) => id.toString() === userId.toString())) {
+          c.role = "STUDENT";
+        } else if (c.teachers.some((id) => id.toString() === userId.toString())) {
+          c.role = "TEACHER";
+        } else if (c.owner.toString() === userId.toString()) {
+          c.role = "OWNER";
+        }
+
         const students = await User.find({ _id: { $in: c.students } });
         const teachers = await User.find({ _id: { $in: c.teachers } });
         const owner = await User.findOne({ _id: c.owner });
-        
+
         c.students = students.map((student) => ({
           _id: student._id,
           name: student.firstname + " " + student.lastname,
-          email: student.email
+          email: student.email,
         }));
         c.teachers = teachers.map((teacher) => ({
           _id: teacher._id,
           name: teacher.firstname + " " + teacher.lastname,
-          email: teacher.email
+          email: teacher.email,
         }));
         c.owner = {
           _id: owner._id,
           name: owner.firstname + " " + owner.lastname,
-          email: owner.email
-        }
+          email: owner.email,
+        };
 
         return res.status(200).json({ payload: c });
       });
@@ -69,7 +78,7 @@ export default {
         if (e) {
           return res.status(500).json({ message: e });
         }
-        
+
         //neu khong co ket qua
         if (!(c && c._id)) {
           return res.status(202).json({ message: "Không tìm thấy thông tin khoá học!" });
@@ -91,10 +100,10 @@ export default {
         }
 
         //Kiểm tra mã mời của khoá học của học sinh
-        if (req.query.code && (req.query.code != c.code)){
+        if (req.query.code && req.query.code != c.code) {
           return res.status(202).json({ message: "INVALID_INVITE_CODE" });
-        };
-        
+        }
+
         //Kiểm tra mã mời của khoá học của giáo viên
         if (req.query.inviteCode && !c.inviteCode.includes(req.query.inviteCode)) {
           return res.status(202).json({ message: "INVALID_INVITE_CODE" });
@@ -106,22 +115,24 @@ export default {
         c.teachers = teachers.map((teacher) => ({
           _id: teacher._id,
           name: teacher.firstname + " " + teacher.lastname,
-          email: teacher.email
+          email: teacher.email,
         }));
         c.owner = {
           _id: owner._id,
           name: owner.firstname + " " + owner.lastname,
-          email: owner.email
-        }
+          email: owner.email,
+        };
 
-        return res.status(200).json({ payload: {
-          _id: c.id,
-          name: c.name,
-          details: c.details,
-          briefName: c.briefName,
-          teachers: c.teachers,
-          owner: c.owner
-        } });
+        return res.status(200).json({
+          payload: {
+            _id: c.id,
+            name: c.name,
+            details: c.details,
+            briefName: c.briefName,
+            teachers: c.teachers,
+            owner: c.owner,
+          },
+        });
       });
   },
 
@@ -157,7 +168,7 @@ export default {
 
     if (req.body.teacherInvite) {
       Course.findOneAndUpdate(
-        { inviteCode: code, teachers: { $ne: userId } },
+        { inviteCode: code, teachers: { $ne: userId }, owner: { $ne: userId } },
         { $pull: { inviteCode: code }, $push: { teachers: userId } }
       ).exec((e, c) => {
         if (e) {
@@ -167,12 +178,15 @@ export default {
       });
     } else {
       Course.findOneAndUpdate(
-        { code, students: { $ne: userId } },
+        { code, students: { $ne: userId }, teachers: { $ne: userId }, owner: { $ne: userId } },
         { $push: { students: userId } }
       ).exec((e, c) => {
         if (e) {
-          
           return res.status(500).json({ message: e });
+        }
+
+        if (!(c && c._id)) {
+          return res.status(202).json({ message: "Tham gia lớp học thất bại.." });
         }
         res.status(200).json({ payload: c, message: "Tham gia lớp học thành công!" });
       });
@@ -181,10 +195,7 @@ export default {
 
   sendTeacherEmail: (req, res) => {
     const inviteCode = randomstring.generate(12);
-    Course.findOneAndUpdate(
-      { _id: req.body.course._id },
-      { $push: { inviteCode: inviteCode } }
-    ).exec((e, c) => {
+    Course.findOneAndUpdate({ _id: req.body.course._id }, { $push: { inviteCode: inviteCode } }).exec((e, c) => {
       if (e) {
         return res.status(500).json({ message: e });
       }

@@ -8,7 +8,7 @@ export default {
   },
   updateProfile: (req, res) => {
     const user = req.user;
-    if (!user) return res.status(404).json({ message: "user error" });
+    if (!user) return res.status(404).json({ message: "Không tìm thấy tài khoản trong hệ thống" });
     const { studentID, firstname, lastname, gender } = req.body;
 
     user.studentID = studentID;
@@ -31,7 +31,7 @@ export default {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         user.password = hashedPassword;
         user.save();
-        return res.status(200).json("Updated Successfully");
+        return res.status(200).json("Cập nhật thành công");
         // return done(null, user);
       } else {
         return res.status(404).json("Mật khẩu không đúng!");
