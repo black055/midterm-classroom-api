@@ -1,14 +1,23 @@
-import Course from "./course.model.js";
-import User from "../user/user.model.js";
 import randomstring from "randomstring";
-import { sendInviteStudentEmail, sendInviteTeacherEmail } from "../../modules/nodemailer/index.js";
+import {
+  sendInviteStudentEmail,
+  sendInviteTeacherEmail,
+} from "../../modules/nodemailer/index.js";
+import User from "../user/user.model.js";
+import Course from "./course.model.js";
 
 export default {
   getCourses: (req, res) => {
     const userId = req.user._id;
 
     //lay toan bo lop ma user co the la teacher hoac student
-    Course.find({ $or: [{ owner: userId }, { teachers: { $in: userId } }, { students: { $in: userId } }] })
+    Course.find({
+      $or: [
+        { owner: userId },
+        { teachers: { $in: userId } },
+        { students: { $in: userId } },
+      ],
+    })
       .lean()
       .exec((e, r) => {
         if (e) {
@@ -24,7 +33,11 @@ export default {
     const userId = req.user._id;
     //lay mot lop ma user co the la teacher hoac student
     Course.findById(_id)
-      .or([{ teachers: { $in: userId } }, { students: { $in: userId } }, { owner: userId }])
+      .or([
+        { teachers: { $in: userId } },
+        { students: { $in: userId } },
+        { owner: userId },
+      ])
       .lean()
       .exec(async (e, c) => {
         if (e) {
@@ -36,12 +49,15 @@ export default {
         }
 
         //xac dinh role
+        let role = "";
         if (c.students.some((id) => id.toString() === userId.toString())) {
-          c.role = "STUDENT";
-        } else if (c.teachers.some((id) => id.toString() === userId.toString())) {
-          c.role = "TEACHER";
+          role = "STUDENT";
+        } else if (
+          c.teachers.some((id) => id.toString() === userId.toString())
+        ) {
+          role = "TEACHER";
         } else if (c.owner.toString() === userId.toString()) {
-          c.role = "OWNER";
+          role = "OWNER";
         }
 
         const students = await User.find({ _id: { $in: c.students } });
@@ -64,7 +80,7 @@ export default {
           email: owner.email,
         };
 
-        return res.status(200).json({ payload: c });
+        return res.status(200).json({ payload: c, role: role });
       });
   },
 
@@ -81,7 +97,9 @@ export default {
 
         //neu khong co ket qua
         if (!(c && c._id)) {
-          return res.status(202).json({ message: "Không tìm thấy thông tin khoá học!" });
+          return res
+            .status(202)
+            .json({ message: "Không tìm thấy thông tin khoá học!" });
         }
 
         // Kiểm tra xem người dùng có trong khoá học chưa
@@ -105,7 +123,10 @@ export default {
         }
 
         //Kiểm tra mã mời của khoá học của giáo viên
-        if (req.query.inviteCode && !c.inviteCode.includes(req.query.inviteCode)) {
+        if (
+          req.query.inviteCode &&
+          !c.inviteCode.includes(req.query.inviteCode)
+        ) {
           return res.status(202).json({ message: "INVALID_INVITE_CODE" });
         }
 
@@ -174,11 +195,18 @@ export default {
         if (e) {
           return res.status(500).json({ message: e });
         }
-        res.status(200).json({ payload: c, message: "Tham gia lớp học thành công!" });
+        res
+          .status(200)
+          .json({ payload: c, message: "Tham gia lớp học thành công!" });
       });
     } else {
       Course.findOneAndUpdate(
-        { code, students: { $ne: userId }, teachers: { $ne: userId }, owner: { $ne: userId } },
+        {
+          code,
+          students: { $ne: userId },
+          teachers: { $ne: userId },
+          owner: { $ne: userId },
+        },
         { $push: { students: userId } }
       ).exec((e, c) => {
         if (e) {
@@ -186,20 +214,32 @@ export default {
         }
 
         if (!(c && c._id)) {
-          return res.status(202).json({ message: "Tham gia lớp học thất bại.." });
+          return res
+            .status(202)
+            .json({ message: "Tham gia lớp học thất bại.." });
         }
-        res.status(200).json({ payload: c, message: "Tham gia lớp học thành công!" });
+        res
+          .status(200)
+          .json({ payload: c, message: "Tham gia lớp học thành công!" });
       });
     }
   },
 
   sendTeacherEmail: (req, res) => {
     const inviteCode = randomstring.generate(12);
-    Course.findOneAndUpdate({ _id: req.body.course._id }, { $push: { inviteCode: inviteCode } }).exec((e, c) => {
+    Course.findOneAndUpdate(
+      { _id: req.body.course._id },
+      { $push: { inviteCode: inviteCode } }
+    ).exec((e, c) => {
       if (e) {
         return res.status(500).json({ message: e });
       }
-      sendInviteTeacherEmail(req.body.email, req.body.course, req.user, inviteCode).then((result) => {
+      sendInviteTeacherEmail(
+        req.body.email,
+        req.body.course,
+        req.user,
+        inviteCode
+      ).then((result) => {
         if (result) {
           res.status(200).json({ message: "SENT_SUCCESSFUL" });
         } else {
@@ -210,11 +250,59 @@ export default {
   },
 
   sendStudentEmail: (req, res) => {
-    sendInviteStudentEmail(req.body.email, req.body.course, req.user).then((result) => {
-      if (result) {
-        res.status(200).json({ message: "SENT_SUCCESSFUL" });
+    sendInviteStudentEmail(req.body.email, req.body.course, req.user).then(
+      (result) => {
+        if (result) {
+          res.status(200).json({ message: "SENT_SUCCESSFUL" });
+        } else {
+          res.status(200).json({ message: "SENT_FAILED" });
+        }
+      }
+    );
+  },
+
+  updateOneCourse: (req, res) => {
+    const _id = req.params.id;
+    const userId = req.user._id;
+    const { name, details, briefName } = req.body;
+    Course.findByIdAndUpdate(
+      _id,
+      { name: name, details: details, briefName: briefName },
+      { new: true },
+      (err, course) => {
+        if (err) {
+          return res.status(500).json({ message: err });
+        } else {
+          let role = "";
+          if (
+            course.students.some((id) => id.toString() === userId.toString())
+          ) {
+            role = "STUDENT";
+          } else if (
+            course.teachers.some((id) => id.toString() === userId.toString())
+          ) {
+            role = "TEACHER";
+          } else if (course.owner.toString() === userId.toString()) {
+            role = "OWNER";
+          }
+          //role ...
+          return res.status(200).json({
+            payload: course,
+            role: role,
+            message: "UPDATE_SUCCESSFUL",
+          });
+        }
+      }
+    );
+  },
+
+  deleteOneCourse: (req, res) => {
+    const _id = req.params.id;
+    Course.findByIdAndRemove(_id, { new: true }, (err, docs) => {
+      if (err) {
+        return res.status(500).json({ message: e });
       } else {
-        res.status(200).json({ message: "SENT_FAILED" });
+        res.status(200).json({ message: "DELETE_SUCCESSFUL" });
       }
     });
   },

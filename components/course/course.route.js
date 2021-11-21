@@ -17,4 +17,8 @@ router.post("/invite/teacher", courseController.sendTeacherEmail);
 
 router.post("/invite/student", courseController.sendStudentEmail);
 
+router.put("/:id", courseController.updateOneCourse);
+
+router.delete("/:id", courseController.deleteOneCourse);
+
 export default router;
