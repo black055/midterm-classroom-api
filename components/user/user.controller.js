@@ -1,5 +1,5 @@
-// import User from './user.model.js';
 import bcrypt from "bcryptjs";
+import User from "./user.model.js";
 export default {
   getUser: (req, res) => {
     // header => token =>
@@ -8,17 +8,34 @@ export default {
   },
   updateProfile: (req, res) => {
     const user = req.user;
-    if (!user) return res.status(404).json({ message: "Không tìm thấy tài khoản trong hệ thống" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy tài khoản trong hệ thống" });
     const { studentID, firstname, lastname, gender } = req.body;
 
-    user.studentID = studentID;
-    user.firstname = firstname;
-    user.lastname = lastname;
-    user.gender = gender;
+    User.find({ studentID: studentID }).exec((error, result) => {
+      if (user.studentID === studentID) {
+        user.firstname = firstname;
+        user.lastname = lastname;
+        user.gender = gender;
 
-    user.save();
+        user.save();
 
-    return res.status(200).json(user);
+        return res.status(200).json(user);
+      }
+      if (JSON.stringify(result) != JSON.stringify([])) {
+        return res.status(404).json({ message: "Đã tồn tại studentID" });
+      }
+      user.studentID = studentID;
+      user.firstname = firstname;
+      user.lastname = lastname;
+      user.gender = gender;
+
+      user.save();
+
+      return res.status(200).json(user);
+    });
   },
   updatePassword: async (req, res) => {
     const user = req.user;
