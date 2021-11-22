@@ -19,13 +19,38 @@ export default {
       ],
     })
       .lean()
-      .exec((e, r) => {
+      .exec(async (e, r) => {
         if (e) {
           return res.status(500).json({ message: e });
         }
+        for (const course of r) {
+          //xac dinh role
+          if (course.students.some((student) => student.equals(userId))) {
+            course.role = "STUDENT";
+            course.code = null;
+          } else if (course.teachers.some((teacher) => teacher.equals(userId))) {
+            course.role = "TEACHER";
+          } else if (course.owner.equals(userId)) {
+            course.role = "OWNER";
+          }
 
-        return res.status(200).json({ payload: [...r] });
-      });
+          const owner = await User.findOne({ _id: course.owner });
+          course.owner = {
+            name: owner.firstname + " " + owner.lastname,
+            email: owner.email,
+          };
+      }
+
+      // Sắp xếp lại kết quả theo thứ tự lớp tự tạo -> lớp làm giáo viên -> lớp tham gia
+      let result = r.map(
+        ( {_id, name, owner, briefName, details, role, code} ) => ({_id, name, owner, briefName, details, role, code})
+      );
+      const order = ['OWNER', 'TEACHER', 'STUDENT'];
+
+      result.sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
+
+      return res.status(200).json({ payload: result });
+    });
   },
 
   getOneCourse: (req, res) => {
@@ -225,12 +250,30 @@ export default {
     }
   },
 
-  sendTeacherEmail: (req, res) => {
+  sendTeacherEmail: async (req, res) => {
+    const userId = req.user._id;
+    
+    // Kiểm tra email đã tồn tại trong các thành viên chưa
+    const isExistedOwner = req.body.course.owner.email === req.body.email;
+    const isExistedTeacher = req.body.course.teachers.some((teacher) => teacher.email === req.body.email);
+    const isExistedStudent = req.body.course.students.some((student) => student.email === req.body.email);
+    if (isExistedOwner || isExistedStudent || isExistedTeacher) {
+      return res.status(200).json({ message: "ALREADY_IN" });
+    }
+    
+    const course = await Course.findOne({ _id: req.body.course._id });
+
+    // Kiểm tra quyền gửi lời mời
+    const isTeacher = course.teachers.some((teacher) => userId.equals(teacher._id));
+    const isOwner = userId._id.equals(course.owner);
+    
+    if (!(isTeacher || isOwner)) {
+      return res.status(401).json({ message: 'Bạn không có quyền gửi lời mời!' });
+    }
+
     const inviteCode = randomstring.generate(12);
-    Course.findOneAndUpdate(
-      { _id: req.body.course._id },
-      { $push: { inviteCode: inviteCode } }
-    ).exec((e, c) => {
+    course.update( { $push: { inviteCode: inviteCode } } )
+    .exec((e, c) => {
       if (e) {
         return res.status(500).json({ message: e });
       }
@@ -249,7 +292,27 @@ export default {
     });
   },
 
-  sendStudentEmail: (req, res) => {
+  sendStudentEmail: async (req, res) => {
+    const userId = req.user._id;
+    
+    // Kiểm tra email đã tồn tại trong các thành viên chưa
+    const isExistedOwner = req.body.course.owner.email === req.body.email;
+    const isExistedTeacher = req.body.course.teachers.some((teacher) => teacher.email === req.body.email);
+    const isExistedStudent = req.body.course.students.some((student) => student.email === req.body.email);
+    if (isExistedOwner || isExistedStudent || isExistedTeacher) {
+      return res.status(200).json({ message: "ALREADY_IN" });
+    }
+    
+    const course = await Course.findOne({ _id: req.body.course._id });
+
+    // Kiểm tra quyền gửi lời mời
+    const isTeacher = course.teachers.some((teacher) => userId.equals(teacher._id));
+    const isOwner = userId._id.equals(course.owner);
+    
+    if (!(isTeacher || isOwner)) {
+      return res.status(401).json({ message: 'Bạn không có quyền gửi lời mời!' });
+    }
+
     sendInviteStudentEmail(req.body.email, req.body.course, req.user).then(
       (result) => {
         if (result) {
@@ -309,4 +372,26 @@ export default {
       }
     });
   },
+
+  leaveCourse: (req, res) => {
+    const userId = req.user._id;
+
+    Course.findOneAndUpdate(
+      { 
+        _id: req.body.courseId,
+        $or: [{ teachers: { $in: userId } }, { students: { $in: userId } }]
+      }, 
+      { $pull: { teachers: userId, students: userId } }
+    )
+    .exec((e, c) => {
+      if (e) {
+        return res.status(500).json({ message: e });
+      }
+      
+      if (!c) {
+        return res.status(400).json({ message: "Bạn chưa tham gia lớp học này!" });
+      }
+      res.status(200).json({ payload: c, message: "Rời khỏi lớp học thành công!" });
+    });
+  }
 };
