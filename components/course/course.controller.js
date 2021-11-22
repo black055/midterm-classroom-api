@@ -261,33 +261,34 @@ export default {
     );
   },
 
-  updateOneCourse: (req, res) => {
+  updateOneCourse: async (req, res) => {
     const _id = req.params.id;
     const userId = req.user._id;
     const { name, details, briefName } = req.body;
+
+    const course = await Course.findOne({ _id: _id });
+
+    const isTeacher = course.teachers.some((teacher) =>
+      userId.equals(teacher._id)
+    );
+    const isOwner = userId.equals(course.owner);
+
+    if (!(isTeacher || isOwner)) {
+      return res.status(401).json({ message: "NO_PERMISSION" });
+    }
+
+    const role = isTeacher ? "TEACHER" : isOwner ? "OWNER" : "";
+
     Course.findByIdAndUpdate(
       _id,
       { name: name, details: details, briefName: briefName },
       { new: true },
-      (err, course) => {
+      (err, crs) => {
         if (err) {
           return res.status(500).json({ message: err });
         } else {
-          let role = "";
-          if (
-            course.students.some((id) => id.toString() === userId.toString())
-          ) {
-            role = "STUDENT";
-          } else if (
-            course.teachers.some((id) => id.toString() === userId.toString())
-          ) {
-            role = "TEACHER";
-          } else if (course.owner.toString() === userId.toString()) {
-            role = "OWNER";
-          }
-          //role ...
-          return res.status(200).json({
-            payload: course,
+          res.status(200).json({
+            payload: crs,
             role: role,
             message: "UPDATE_SUCCESSFUL",
           });
@@ -296,11 +297,20 @@ export default {
     );
   },
 
-  deleteOneCourse: (req, res) => {
+  deleteOneCourse: async (req, res) => {
     const _id = req.params.id;
+    const userId = req.user._id;
+
+    const course = await Course.findOne({ _id: _id });
+    const isOwner = userId.equals(course.owner);
+
+    if (!isOwner) {
+      return res.status(401).json({ message: "NO_PERMISSION" });
+    }
+
     Course.findByIdAndRemove(_id, { new: true }, (err, docs) => {
       if (err) {
-        return res.status(500).json({ message: e });
+        return res.status(500).json({ message: err });
       } else {
         res.status(200).json({ message: "DELETE_SUCCESSFUL" });
       }
