@@ -51,13 +51,13 @@ export default {
         //xac dinh role
         let role = "";
         if (c.students.some((id) => id.toString() === userId.toString())) {
-          role = "STUDENT";
+          c.role = "STUDENT";
         } else if (
           c.teachers.some((id) => id.toString() === userId.toString())
         ) {
-          role = "TEACHER";
+          c.role = "TEACHER";
         } else if (c.owner.toString() === userId.toString()) {
-          role = "OWNER";
+          c.role = "OWNER";
         }
 
         const students = await User.find({ _id: { $in: c.students } });
@@ -277,24 +277,17 @@ export default {
       return res.status(401).json({ message: "NO_PERMISSION" });
     }
 
-    const role = isTeacher ? "TEACHER" : isOwner ? "OWNER" : "";
+    course.name = name;
+    course.details = details;
+    course.briefName = briefName;
+    course.save();
 
-    Course.findByIdAndUpdate(
-      _id,
-      { name: name, details: details, briefName: briefName },
-      { new: true },
-      (err, crs) => {
-        if (err) {
-          return res.status(500).json({ message: err });
-        } else {
-          res.status(200).json({
-            payload: crs,
-            role: role,
-            message: "UPDATE_SUCCESSFUL",
-          });
-        }
-      }
-    );
+    const payload = { name: name, details: details, briefName: briefName };
+
+    res.status(200).json({
+      payload: payload,
+      message: "UPDATE_SUCCESSFUL",
+    });
   },
 
   deleteOneCourse: async (req, res) => {
