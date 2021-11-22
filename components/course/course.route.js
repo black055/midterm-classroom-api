@@ -21,4 +21,6 @@ router.put("/:id", courseController.updateOneCourse);
 
 router.delete("/:id", courseController.deleteOneCourse);
 
+router.post("/leaveCourse", courseController.leaveCourse);
+
 export default router;
