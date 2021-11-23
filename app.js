@@ -36,7 +36,12 @@ mongoose.connect(process.env.DATABASE_URL,
       }
   );
 
-app.use(cors());
+const whitelist = ['https://midterm-classroom-app.netlify.app', 'http://localhost:3001']
+
+app.use(cors({
+    credentials: true,
+    origin: whitelist
+}));
 app.use(passport.initialize());
 app.use(logger('dev'));
 app.use(express.json());

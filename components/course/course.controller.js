@@ -202,8 +202,15 @@ export default {
         if (e) {
           return res.status(500).json({ message: e });
         }
-
-        res.status(200).json({ payload: c });
+        let result = (({_id, name, owner, briefName, details, code}) => ({_id, name, owner, briefName, details, code}))(c);
+        result.owner = {
+          name: req.user.firstname + " " + req.user.lastname,
+          email: req.user.email,
+        };
+        result.role = "OWNER";
+        
+        console.log(result);
+        res.status(200).json({ payload: result });
       }
     );
   },
@@ -272,24 +279,22 @@ export default {
     }
 
     const inviteCode = randomstring.generate(12);
-    course.update( { $push: { inviteCode: inviteCode } } )
-    .exec((e, c) => {
-      if (e) {
-        return res.status(500).json({ message: e });
+    
+    sendInviteTeacherEmail(
+      req.body.email,
+      req.body.course,
+      req.user,
+      inviteCode
+    ).then((result) => {
+      if (result) {
+        course.inviteCode.push(inviteCode);
+        course.save();
+        res.status(200).json({ message: "SENT_SUCCESSFUL" });
+      } else {
+        res.status(200).json({ message: "SENT_FAILED" });
       }
-      sendInviteTeacherEmail(
-        req.body.email,
-        req.body.course,
-        req.user,
-        inviteCode
-      ).then((result) => {
-        if (result) {
-          res.status(200).json({ message: "SENT_SUCCESSFUL" });
-        } else {
-          res.status(200).json({ message: "SENT_FAILED" });
-        }
-      });
     });
+
   },
 
   sendStudentEmail: async (req, res) => {
